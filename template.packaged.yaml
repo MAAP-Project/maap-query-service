@@ -1,0 +1,162 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+Parameters:
+  Stage:
+    Type: String
+  GediDatabaseHost:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /dev/gedi-cal-val-db/host
+  GediDatabaseName:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /dev/gedi-cal-val-db/name
+  GediDatabaseUser:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /dev/gedi-cal-val-db/user
+  GediDatabasePass:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /dev/gedi-cal-val-db/pass
+Globals:
+  Function:
+    Runtime: nodejs10.x
+    Timeout: 180
+    Tracing: Active
+Resources:
+  DetermineBackend:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: determine-backend.default
+      CodeUri: s3://maap-api-query-service-dev/cbaa45200716bdebb89a3ae94d720128
+  CaptureErrors:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: capture-errors.default
+      CodeUri: s3://maap-api-query-service-dev/cbaa45200716bdebb89a3ae94d720128
+      Environment:
+        Variables:
+          QUERY_BUCKET:
+            Ref: QueryResultsBucket
+      Policies:
+      - S3CrudPolicy:
+          BucketName:
+            Ref: QueryResultsBucket
+  CaptureMetadata:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: capture-metadata.default
+      CodeUri: s3://maap-api-query-service-dev/cbaa45200716bdebb89a3ae94d720128
+      Environment:
+        Variables:
+          QUERY_BUCKET:
+            Ref: QueryResultsBucket
+      Policies:
+      - S3CrudPolicy:
+          BucketName:
+            Ref: QueryResultsBucket
+  QueryGediCalValPostgres:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: query-postgres.default
+      CodeUri: s3://maap-api-query-service-dev/cbaa45200716bdebb89a3ae94d720128
+      Environment:
+        Variables:
+          DB_HOST:
+            Ref: GediDatabaseHost
+          DB_NAME:
+            Ref: GediDatabaseName
+          DB_USER:
+            Ref: GediDatabaseUser
+          DB_PASS:
+            Ref: GediDatabasePass
+          QUERY_BUCKET:
+            Ref: QueryResultsBucket
+      Policies:
+      - S3CrudPolicy:
+          BucketName:
+            Ref: QueryResultsBucket
+  RunQuery:
+    Type: AWS::StepFunctions::StateMachine
+    Properties:
+      StateMachineName:
+        Fn::Sub: ${AWS::StackName}-RunQuery
+      DefinitionString:
+        Fn::Sub:
+        - "{\n  \"StartAt\": \"${DetermineBackend}\",\n  \"States\": {\n\n    \"${DetermineBackend}\"\
+          : {\n      \"Type\": \"Task\",\n      \"Resource\": \"${DetermineBackendArn}\"\
+          ,\n      \"InputPath\": \"$.src\",\n      \"ResultPath\": \"$.backend\"\
+          ,\n      \"Catch\": [{\n        \"ErrorEquals\": [ \"States.ALL\" ],\n \
+          \       \"ResultPath\": \"$.error\",\n        \"Next\": \"${CaptureErrors}\"\
+          \n      }],\n      \"Next\": \"${RouteToBackendHandler}\"\n    },\n\n  \
+          \  \"${RouteToBackendHandler}\": {\n      \"Type\": \"Choice\",\n      \"\
+          Choices\": [\n        {\n          \"Variable\": \"$.backend\",\n      \
+          \    \"StringEquals\": \"gedi-postgres\",\n          \"Next\": \"${QueryGediCalValPostgres}\"\
+          \n        }\n      ],\n      \"Default\": \"${HandleUnknownBackend}\"\n\
+          \    },\n\n    \"${HandleUnknownBackend}\": {\n      \"Type\": \"Pass\"\
+          ,\n      \"Result\": {\n        \"Error\": \"NoBackendFound\",\n       \
+          \ \"Cause\": \"No appropriate backend found for given Collection or Granule.\"\
+          \n      },\n      \"ResultPath\": \"$.error\",\n      \"Next\": \"${CaptureErrors}\"\
+          \n    },\n\n    \"${QueryGediCalValPostgres}\": {\n      \"Type\": \"Task\"\
+          ,\n      \"Resource\": \"${QueryGediCalValPostgresArn}\",\n      \"Catch\"\
+          : [{\n        \"ErrorEquals\": [ \"States.ALL\" ],\n        \"ResultPath\"\
+          : \"$.error\",\n        \"Next\": \"${CaptureErrors}\"\n      }],\n    \
+          \  \"ResultPath\": null,\n      \"Next\": \"${CaptureMetadata}\"\n    },\n\
+          \n    \"${CaptureErrors}\": {\n      \"Type\": \"Task\",\n      \"Resource\"\
+          : \"${CaptureErrorsArn}\",\n      \"ResultPath\": null,\n      \"Next\"\
+          : \"${CaptureMetadata}\"\n    },\n\n    \"${CaptureMetadata}\": {\n    \
+          \  \"Type\": \"Task\",\n      \"Resource\": \"${CaptureMetadataArn}\",\n\
+          \      \"End\": true\n    }\n  }\n}"
+        - DetermineBackend: Determine Backend
+          DetermineBackendArn:
+            Fn::GetAtt:
+            - DetermineBackend
+            - Arn
+          RouteToBackendHandler: Route to appropriate query handler
+          HandleUnknownBackend: No backend found
+          QueryGediCalValPostgres: Query GEDI Cal Val DB
+          QueryGediCalValPostgresArn:
+            Fn::GetAtt:
+            - QueryGediCalValPostgres
+            - Arn
+          CaptureErrors: Record error
+          CaptureErrorsArn:
+            Fn::GetAtt:
+            - CaptureErrors
+            - Arn
+          CaptureMetadata: Record metadata
+          CaptureMetadataArn:
+            Fn::GetAtt:
+            - CaptureMetadata
+            - Arn
+      RoleArn:
+        Fn::GetAtt:
+        - StatesExecutionRole
+        - Arn
+  StatesExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - Fn::Sub: states.${AWS::Region}.amazonaws.com
+          Action: sts:AssumeRole
+      Path: /
+      Policies:
+      - PolicyName: StatesExecutionPolicy
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+          - Effect: Allow
+            Action:
+            - lambda:InvokeFunction
+            Resource: '*'
+  QueryResultsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName:
+        Fn::Sub: ${AWS::StackName}-query-results
+      LifecycleConfiguration:
+        Rules:
+        - ExpirationInDays: 7
+          Status: Enabled

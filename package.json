@@ -1,0 +1,42 @@
+{
+  "name": "maap-api-query-service",
+  "version": "1.0.0",
+  "description": "Service to query MAAP data",
+  "typings": "dist/types/index.d.ts",
+  "scripts": {
+    "start": "tsc --watch",
+    "build": "NODE_ENV=${NODE_ENV:-production} npm run clean && tsc && cp package.json dist && npm install --prefix dist/ --production",
+    "validate": "node scripts/validate-template.js",
+    "package": "npm run --silent validate && sam package --template-file template.yaml --s3-bucket $npm_package_name-${STAGE:-dev} --output-template-file template.packaged.yaml",
+    "deploy": "sam deploy --template-file template.packaged.yaml --stack-name $npm_package_name-${STAGE:-dev} --capabilities CAPABILITY_IAM --parameter-override Stage=${STAGE:-dev} GediDatabaseHost=\"${SSM_GEDI_DB_HOST:-/dev/gedi-cal-val-db/host}\" GediDatabaseName=\"${SSM_GEDI_DB_NAME:-/dev/gedi-cal-val-db/name}\" GediDatabaseUser=\"${SSM_GEDI_DB_USER:-/dev/gedi-cal-val-db/user}\" GediDatabasePass=\"${SSM_GEDI_DB_PASS:-/dev/gedi-cal-val-db/pass}\"  --no-fail-on-empty-changeset --s3-bucket $npm_package_name-${STAGE:-dev}",
+    "full-deploy": "npm run build && npm run package && npm run deploy",
+    "describe-stack": "aws cloudformation describe-stacks --stack-name $npm_package_name-${STAGE:-dev}",
+    "describe-stack-events": "aws cloudformation describe-stack-events --stack-name $npm_package_name-${STAGE:-dev}",
+    "clean": "rm -rf dist/*"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/maap-project/maap-api-query-service"
+  },
+  "license": "UNLICENSED",
+  "private": true,
+  "dependencies": {
+    "pg-promise": "^8.7.4",
+    "source-map-support": "^0.5.10",
+    "uuid": "^3.3.2"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.16",
+    "@types/node": "^10.12.17",
+    "@types/pg-promise": "^5.4.3",
+    "@types/request-promise": "^4.1.44",
+    "@types/uuid": "^3.4.4",
+    "aws-sdk": "^2.379.0",
+    "jsonlint": "^1.6.3",
+    "tslint": "^5.12.0",
+    "tslint-config-prettier": "^1.18.0",
+    "tslint-config-standard": "^7.1.0",
+    "typescript": "^3.2.2",
+    "yaml-cfn": "^0.2.0"
+  }
+}
