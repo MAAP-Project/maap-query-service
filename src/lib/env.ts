@@ -7,7 +7,7 @@ export function envPick<
   const ret = pick(env, ...keys)
   const unsetKeys = Object.entries(ret)
     .filter(([key, value]: [string, any]) => ['', undefined].includes(value))
-    .map(([k, v]: [string, any]) => k)
+    .map(([key, value]: [string, any]) => key)
   if (unsetKeys.length) {
     throw new Error(`ERROR: Required keys are unset: ${unsetKeys.join(', ')}`)
   }
