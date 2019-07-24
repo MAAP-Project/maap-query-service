@@ -5,13 +5,25 @@ import { envPick } from "./lib/env";
 import { saveAsyncResults } from "./lib/s3";
 
 export default async ({ id, query }: payload.ExecutionInput) => {
-  const { DB_HOST, DB_NAME, DB_USER, DB_PASS, QUERY_BUCKET } = envPick(
+  const {
+    DB_HOST,
+    DB_NAME,
+    DB_USER,
+    DB_PASS,
+    QUERY_BUCKET,
+    TABLE,
+    X_FIELD,
+    Y_FIELD,
+  } = envPick(
     process.env,
     "DB_HOST",
     "DB_NAME",
     "DB_USER",
     "DB_PASS",
     "QUERY_BUCKET",
+    "TABLE",
+    "X_FIELD",
+    "Y_FIELD",
   );
   const db = pgp()({
     database: DB_NAME,
@@ -23,18 +35,20 @@ export default async ({ id, query }: payload.ExecutionInput) => {
   const { fields = [], bbox = [] } = query;
 
   const sql = pgp.as.format(
-    `SELECT ${fields.length ? "$1:name" : "*"}
-      FROM gedi_insitu.usa_sonoma_treedata as tree
-      JOIN gedi_insitu.usa_sonoma_plotdata as plot
-      ON tree.plot = plot.plot
+    `SELECT ${
+      fields.length
+        ? "$1:name" /* Using :name should protect us from SQL-injection */
+        : "*"
+    }
+      FROM ${TABLE}
   ${
     bbox.length
       ? // TODO: Support bbox values crossing 180th meridian
         `WHERE
-          longitude >= $2 AND
-          latitude >= $3 AND
-          longitude <= $4 AND
-          latitude <= $5`
+          ${X_FIELD} >= $2 AND
+          ${Y_FIELD} >= $3 AND
+          ${X_FIELD} <= $4 AND
+          ${Y_FIELD} <= $5`
       : ""
   }
   `,

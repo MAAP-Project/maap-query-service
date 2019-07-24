@@ -71,6 +71,9 @@ Resources:
           DB_USER: !Ref GediDatabaseUser
           DB_PASS: !Ref GediDatabasePass
           QUERY_BUCKET: !Ref QueryResultsBucket
+          TABLE: "gedi_insitu.usa_sonoma_treedata as tree JOIN gedi_insitu.usa_sonoma_plotdata as plot ON tree.plot = plot.plot"
+          X_FIELD: longitude
+          Y_FIELD: latitude
       Policies:
         - S3CrudPolicy:
             BucketName: !Ref QueryResultsBucket
