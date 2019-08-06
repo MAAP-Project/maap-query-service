@@ -9,20 +9,22 @@ declare namespace payload {
   type QueryId = string;
 
   // Src
-  type SrcData = CollectionSrc | GranuleSrc;
+  type SrcData = CollectionSrc;
 
+  // NOTE: We're making the assumption that the input Collection object will
+  // come in the format that is returned by CMR as XML and then converted to
+  // JSON.
   interface CollectionSrc {
-    collection: Collection;
+    Collection: Collection;
   }
-  type Collection = any; // TODO: Populate
-
-  interface GranuleSrc {
-    granule: Granule;
+  interface Collection {
+    ShortName: string;
+    VersionId: string;
   }
-  type Granule = any; // TODO: Populate
 
   // Query
   interface Query {
+    where?: Record<string, string | number | boolean>;
     bbox?: BBox;
     fields?: string[];
   }

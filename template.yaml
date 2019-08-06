@@ -23,6 +23,9 @@ Globals:
     Runtime: nodejs10.x
     Timeout: 180
     Tracing: Active
+    Environment:
+      Variables:
+        NODE_ENV: 'production'
 
 Resources:
   # Meta Functions
@@ -71,9 +74,8 @@ Resources:
           DB_USER: !Ref GediDatabaseUser
           DB_PASS: !Ref GediDatabasePass
           QUERY_BUCKET: !Ref QueryResultsBucket
-          TABLE: "gedi_insitu.usa_sonoma_treedata as tree JOIN gedi_insitu.usa_sonoma_plotdata as plot ON tree.plot = plot.plot"
-          X_FIELD: longitude
-          Y_FIELD: latitude
+          TABLE: '"gedi_insitu"."plot_tree_data"'
+          GEOM_COL: "geom_obj"
       Policies:
         - S3CrudPolicy:
             BucketName: !Ref QueryResultsBucket

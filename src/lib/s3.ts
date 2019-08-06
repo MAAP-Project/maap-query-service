@@ -16,7 +16,7 @@ export const saveResults = ({
     })
     .promise();
 
-export const saveAsyncResults = ({ ...opts }: WriteOptions) => (data: any) =>
+export const saveAsyncResults = (opts: WriteOptions) => (data: any) =>
   saveResults({
     data,
     ...opts,
