@@ -2,12 +2,56 @@
 
 ## Query Steps
 
-1. Lookup Granule/Collection in CMR [lambda]
 1. Detect backend [lambda]
 1. Route to appropriate handler for that backend [step function choice state]
 1. Run query [lambda]
 1. Write output to S3 bucket
    - If failure, write error to S3 bucket
+
+## Message Format
+
+In [JSON Schema]();
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "id": { "type": "string" },
+    "src": {
+      "type": "object",
+      "Collection": {
+        "description": "Collection object",
+        "type": "object",
+        "properties": {
+          "ShortName": { "type": "string" },
+          "Version": { "type": "string" }
+        }
+      }
+    },
+    "query": {
+      "type": "object",
+      "properties": {
+        "fields": {
+          "description": "Fields to be returned from dataset. If omitted, all fields will be returned",
+          "type": "array",
+          "items": { "type": "array" }
+        },
+        "bbox": {
+          "description": "A GeoJSON-compliant 2D bounding box (https://tools.ietf.org/html/rfc7946#section-5)",
+          "type": "array",
+          "items": [
+            { "type": "number", "description": "X Min" },
+            { "type": "number", "description": "Y Min" },
+            { "type": "number", "description": "X Max" },
+            { "type": "number", "description": "Y Max" }
+          ]
+        }
+      }
+    }
+  },
+  "required": ["id", "src", "query"]
+}
+```
 
 ## Development
 
@@ -35,14 +79,3 @@ aws ssm put-parameter --cli-input-json '{
 ```
 
 Alternatively, the web UI also supports URL values. See https://github.com/aws/aws-cli/issues/2507 for more information.
-
-## Questions
-
-- Should it be the Query Service or the MAAP API that accesses the CMR?
-  - Query Service: This simplifies the complexity of message that the MAAP API needs to send
-  - **MAAP API**: Can give realtime errors if Granule UR / Collection details are incorrect
-    - Let's go with expecting full Granule or Collection arguments to be sent to the Step Function.
-    - Gains:
-      - Simplifies deployment requirements.
-      - Avoids need to rebuild CMR client etc.
-- If a query fails but the Step Function properly handles that failure, should the Step Function execution be marked as a failure?
