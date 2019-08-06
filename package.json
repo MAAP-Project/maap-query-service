@@ -8,7 +8,7 @@
     "build": "NODE_ENV=${NODE_ENV:-production} npm run clean && tsc && cp package.json dist && npm install --prefix dist/ --production",
     "validate": "node scripts/validate-template.js",
     "package": "npm run --silent validate && sam package --template-file template.yaml --s3-bucket $npm_package_name-${STAGE:-dev} --output-template-file template.packaged.yaml",
-    "deploy": "sam deploy --template-file template.packaged.yaml --stack-name $npm_package_name-${STAGE:-dev} --capabilities CAPABILITY_IAM --parameter-override Stage=${STAGE:-dev} GediDatabaseHost=\"${SSM_GEDI_DB_HOST:-/dev/gedi-cal-val-db/host}\" GediDatabaseName=\"${SSM_GEDI_DB_NAME:-/dev/gedi-cal-val-db/name}\" GediDatabaseUser=\"${SSM_GEDI_DB_USER:-/dev/gedi-cal-val-db/user}\" GediDatabasePass=\"${SSM_GEDI_DB_PASS:-/dev/gedi-cal-val-db/pass}\"  --no-fail-on-empty-changeset --s3-bucket $npm_package_name-${STAGE:-dev}",
+    "deploy": "sam deploy --template-file template.packaged.yaml --stack-name $npm_package_name-${STAGE:-dev} --capabilities CAPABILITY_IAM --parameter-override Stage=${STAGE:-dev} GediDatabaseHost=\"${SSM_GEDI_DB_HOST:-/dev/gedi-cal-val-db/host}\" GediDatabaseName=\"${SSM_GEDI_DB_NAME:-/dev/gedi-cal-val-db/name}\" GediDatabaseUser=\"${SSM_GEDI_DB_USER:-/dev/gedi-cal-val-db/user}\" GediDatabasePass=\"${SSM_GEDI_DB_PASS:-/dev/gedi-cal-val-db/pass}\"  --no-fail-on-empty-changeset --s3-bucket $npm_package_name-${STAGE:-dev}-deploy",
     "full-deploy": "npm run build && npm run package && npm run deploy",
     "describe-stack": "aws cloudformation describe-stacks --stack-name $npm_package_name-${STAGE:-dev}",
     "describe-stack-events": "aws cloudformation describe-stack-events --stack-name $npm_package_name-${STAGE:-dev}",
