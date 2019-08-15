@@ -79,3 +79,9 @@ aws ssm put-parameter --cli-input-json '{
 ```
 
 Alternatively, the web UI also supports URL values. See https://github.com/aws/aws-cli/issues/2507 for more information.
+
+### Adding a Backend (AODS)
+
+To add a new backend, a developer should first create a new handler. Backend handlers are intended to be simple, in charge of querying the data source and writing their results to S3. To simplify and unify the process of writing to S3, helper functions can be found in `src/lib/s3.ts`. It is important that each backend properly set the `ContentType` of the data uploaded, as end-users should be able to rely on this header to determine how to parse the result data.
+
+After creating a handler, the developer should then update the `RouteToBackendHandler` step in the `RunQuery` State Machine found in `template.yaml`.
