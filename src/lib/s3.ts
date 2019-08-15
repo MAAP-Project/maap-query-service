@@ -4,26 +4,32 @@ import { PutObjectRequest } from "aws-sdk/clients/s3";
 const s3 = new S3();
 
 export const saveResults = ({
-  json = true,
-  data,
+  ContentType,
+  Body,
   ...s3Options
 }: WriteOptionsWithData) =>
   s3
     .putObject({
-      Body: json ? JSON.stringify(data) : data,
-      ContentType: json ? "application/json" : "text/plain",
       ...s3Options,
+      Body,
+      ContentType,
     })
     .promise();
 
-export const saveAsyncResults = (opts: WriteOptions) => (data: any) =>
+// Higher-order function is useful for creating a handler for a promise result.
+export const saveAsyncResults = (opts: WriteOptions) => (
+  Body: RequiredBody["Body"],
+) =>
   saveResults({
-    data,
     ...opts,
+    Body,
   });
 
-interface Json {
-  json?: boolean;
+interface RequiredContentType {
+  ContentType: Required<PutObjectRequest>["ContentType"];
 }
-type WriteOptions = Json & PutObjectRequest;
-type WriteOptionsWithData = WriteOptions & { data: any };
+interface RequiredBody {
+  Body: Required<PutObjectRequest>["Body"];
+}
+type WriteOptions = PutObjectRequest & RequiredContentType;
+type WriteOptionsWithData = WriteOptions & RequiredBody;

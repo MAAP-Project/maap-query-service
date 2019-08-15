@@ -68,5 +68,14 @@ export default async ({ id, query }: payload.ExecutionInput) => {
   );
 
   console.log(sql);
-  return db.any(sql).then(saveAsyncResults({ Bucket: QUERY_BUCKET, Key: id }));
+  return db
+    .any(sql)
+    .then(JSON.stringify)
+    .then(
+      saveAsyncResults({
+        Bucket: QUERY_BUCKET,
+        ContentType: "application/json",
+        Key: id,
+      }),
+    );
 };
