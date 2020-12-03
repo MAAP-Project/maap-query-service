@@ -10,7 +10,8 @@ const {
   DB_USER,
   DB_PASS,
   QUERY_BUCKET,
-  TABLE,
+  TREE_TABLE,
+  PLOT_TABLE,
   GEOM_COL,
 } = envPick(
   process.env,
@@ -19,7 +20,8 @@ const {
   "DB_USER",
   "DB_PASS",
   "QUERY_BUCKET",
-  "TABLE",
+  "TREE_TABLE",
+  "PLOT_TABLE",
   "GEOM_COL",
 );
 const pgp = Pgp();
@@ -31,7 +33,7 @@ const db = pgp({
 });
 
 export default async ({ id, query }: payload.ExecutionInput) => {
-  const { fields = [], bbox = [], where = {} } = query;
+  const { fields = [], bbox = [], where = {}, table = "" } = query;
 
   let [whereStatements, whereValues] = Object.entries(where).reduce(
     ([statements, values], [k, v]) => [statements.concat(k), values.concat(v)],
@@ -48,6 +50,39 @@ export default async ({ id, query }: payload.ExecutionInput) => {
   }
 
   let i = 1; // offset by 1 due to the the 'fields' parameter
+  /* replace $(TREE_TABLE) and $(PLOT_TABLE) with hard code: treedata and plotdata */
+  if(table == "tree") {
+    const sql = pgp.as.format(
+      `
+        SELECT ${
+          fields.length
+            ? "$1:name" /* Using :name should protect us from SQL-injection */
+            : "*"
+        }
+        FROM ${TREE_TABLE} 
+        ${
+          whereStatements.length
+            ? `WHERE ${whereStatements
+                .join(" AND ")
+                .replace(/\?/g, m => `$${++i}`)}`
+            : ""
+        }
+      `,
+      [fields, ...whereValues],
+    );
+    console.log(sql);
+    return db
+      .any(sql)
+      .then(JSON.stringify)
+      .then(
+        saveAsyncResults({
+          Bucket: QUERY_BUCKET,
+          ContentType: "application/json",
+          Key: id,
+        }),
+      );
+ }
+ else {
   const sql = pgp.as.format(
     `
       SELECT ${
@@ -55,7 +90,7 @@ export default async ({ id, query }: payload.ExecutionInput) => {
           ? "$1:name" /* Using :name should protect us from SQL-injection */
           : "*"
       }
-      FROM ${TABLE}
+      FROM ${PLOT_TABLE}
       ${
         whereStatements.length
           ? `WHERE ${whereStatements
@@ -66,7 +101,6 @@ export default async ({ id, query }: payload.ExecutionInput) => {
     `,
     [fields, ...whereValues],
   );
-
   console.log(sql);
   return db
     .any(sql)
@@ -78,4 +112,5 @@ export default async ({ id, query }: payload.ExecutionInput) => {
         Key: id,
       }),
     );
+ }
 };
