@@ -27,38 +27,92 @@ Globals:
       Variables:
         NODE_ENV: 'production'
 
-Resources:
+Resources:                
   # Meta Functions
   # ---------------
   DetermineBackend:
     Type: AWS::Serverless::Function
     Properties:
       Handler: determine-backend.default
+      Role: !GetAtt [ LambdaExecutionRole, Arn ]
       CodeUri: ./dist
 
   CaptureErrors:
     Type: AWS::Serverless::Function
     Properties:
       Handler: capture-errors.default
+      Role: !GetAtt [ LambdaExecutionRole, Arn ]
       CodeUri: ./dist
       Environment:
         Variables:
           QUERY_BUCKET: !Ref QueryResultsBucket
-      Policies:
-        - S3CrudPolicy:
-            BucketName: !Ref QueryResultsBucket
 
   CaptureMetadata:
     Type: AWS::Serverless::Function
     Properties:
       Handler: capture-metadata.default
+      Role: !GetAtt [ LambdaExecutionRole, Arn ]
       CodeUri: ./dist
       Environment:
         Variables:
           QUERY_BUCKET: !Ref QueryResultsBucket
+
+  StatesExecutionRole:
+    Type: Custom::JplRole
+    Properties:
+      ServiceToken: !ImportValue Custom::JplRole::ServiceToken
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - !Sub states.${AWS::Region}.amazonaws.com
+            Action: sts:AssumeRole
+      Path: /account-managed/
       Policies:
-        - S3CrudPolicy:
-            BucketName: !Ref QueryResultsBucket
+        - PolicyName: StatesExecutionPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                Resource: "*"
+
+  LambdaExecutionRole:
+    Type: Custom::JplRole
+    Properties:
+      ServiceToken: !ImportValue Custom::JplRole::ServiceToken
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Path: /account-managed/
+      Policies:
+        - PolicyName: maap-qs-xray-lambda-policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - xray:PutTraceSegments
+                Resource: "*"
+        - PolicyName: maap-qs-s3-policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Action:
+                  - s3:GetObject
+                  - s3:ListBucket
+                  - s3:PutObject
+                Resource:
+                  - !GetAtt QueryResultsBucket.Arn
+                  - !Sub "${QueryResultsBucket.Arn}*"
+                Effect: Allow         
 
   # Query Functions
   # ---------------
@@ -66,6 +120,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: query-postgres.default
+      Role: !GetAtt [ LambdaExecutionRole, Arn ]
       CodeUri: ./dist
       Environment:
         Variables:
@@ -168,31 +223,7 @@ Resources:
           CaptureMetadata: Record metadata
           CaptureMetadataArn: !GetAtt CaptureMetadata.Arn
 
-      RoleArn: !GetAtt StatesExecutionRole.Arn
-
-  # IAM Roles
-  # ----------
-  StatesExecutionRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - !Sub states.${AWS::Region}.amazonaws.com
-            Action: sts:AssumeRole
-      Path: /
-      Policies:
-        - PolicyName: StatesExecutionPolicy
-          PolicyDocument:
-            Version: 2012-10-17
-            Statement:
-              - Effect: Allow
-                Action:
-                  - lambda:InvokeFunction
-                Resource: "*"
+      RoleArn: !GetAtt [ StatesExecutionRole, Arn ]
 
   # Buckets
   # --------
