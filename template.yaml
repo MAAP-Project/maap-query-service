@@ -131,8 +131,8 @@ Resources:
           QUERY_BUCKET: !Ref QueryResultsBucket
           TABLE: '"gedi_insitu"."plot_tree_data"'
           GEOM_COL: "geom_obj"
-          TREE_TABLE: "treedata"
-          PLOT_TABLE: "plotdata"
+          TREE_TABLE: '"gedi_insitu"."treedata"'
+          PLOT_TABLE: '"gedi_insitu"."plotdata"'
       Policies:
         - S3CrudPolicy:
             BucketName: !Ref QueryResultsBucket
