@@ -1,8 +1,8 @@
-import "source-map-support/register";
-
 import Pgp from "pg-promise";
+import "source-map-support/register";
 import { envPick } from "./lib/env";
-import { saveAsyncResults } from "./lib/s3";
+import { saveResults } from "./lib/s3";
+
 
 const {
   DB_HOST,
@@ -59,7 +59,7 @@ export default async ({ id, query }: payload.ExecutionInput) => {
             ? "$1:name" /* Using :name should protect us from SQL-injection */
             : "*"
         }
-        FROM ${TREE_TABLE} 
+        FROM ${TREE_TABLE}
         ${
           whereStatements.length
             ? `WHERE ${whereStatements
@@ -75,9 +75,9 @@ export default async ({ id, query }: payload.ExecutionInput) => {
       .any(sql)
       .then(JSON.stringify)
       .then(
-        saveAsyncResults({
+        (Body) => saveResults({
+          Body,
           Bucket: QUERY_BUCKET,
-          ContentType: "application/json",
           Key: id,
         }),
       );
@@ -106,9 +106,9 @@ export default async ({ id, query }: payload.ExecutionInput) => {
     .any(sql)
     .then(JSON.stringify)
     .then(
-      saveAsyncResults({
+      (Body) => saveResults({
+        Body,
         Bucket: QUERY_BUCKET,
-        ContentType: "application/json",
         Key: id,
       }),
     );
