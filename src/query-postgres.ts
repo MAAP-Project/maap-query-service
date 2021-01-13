@@ -1,8 +1,7 @@
-import "source-map-support/register";
-
 import Pgp from "pg-promise";
+import "source-map-support/register";
 import { envPick } from "./lib/env";
-import { saveAsyncResults } from "./lib/s3";
+import { saveResults } from "./lib/s3";
 
 const {
   DB_HOST,
@@ -32,14 +31,24 @@ const db = pgp({
   user: DB_USER,
 });
 
+const tableLookup: Record<string, string> = {
+  plot: PLOT_TABLE,
+  tree: TREE_TABLE,
+};
+
 export default async ({ id, query }: payload.ExecutionInput) => {
   const { fields = [], bbox = [], where = {}, table = "" } = query;
+
+  const queryTable = tableLookup[table];
+  if (!queryTable) {
+    throw new Error(`Unsupported table: ${table || "null"}`);
+  }
 
   let [whereStatements, whereValues] = Object.entries(where).reduce(
     ([statements, values], [k, v]) => [statements.concat(k), values.concat(v)],
     [[] as string[], [] as Array<string | number | boolean>],
   );
-  whereStatements = whereStatements.map(field => `${field} = ?`);
+  whereStatements = whereStatements.map((field) => `${field} = ?`);
 
   if (bbox.length) {
     whereStatements = [
@@ -50,39 +59,6 @@ export default async ({ id, query }: payload.ExecutionInput) => {
   }
 
   let i = 1; // offset by 1 due to the the 'fields' parameter
-  /* replace $(TREE_TABLE) and $(PLOT_TABLE) with hard code: treedata and plotdata */
-  if(table == "tree") {
-    const sql = pgp.as.format(
-      `
-        SELECT ${
-          fields.length
-            ? "$1:name" /* Using :name should protect us from SQL-injection */
-            : "*"
-        }
-        FROM ${TREE_TABLE} 
-        ${
-          whereStatements.length
-            ? `WHERE ${whereStatements
-                .join(" AND ")
-                .replace(/\?/g, m => `$${++i}`)}`
-            : ""
-        }
-      `,
-      [fields, ...whereValues],
-    );
-    console.log(sql);
-    return db
-      .any(sql)
-      .then(JSON.stringify)
-      .then(
-        saveAsyncResults({
-          Bucket: QUERY_BUCKET,
-          ContentType: "application/json",
-          Key: id,
-        }),
-      );
- }
- else {
   const sql = pgp.as.format(
     `
       SELECT ${
@@ -90,27 +66,22 @@ export default async ({ id, query }: payload.ExecutionInput) => {
           ? "$1:name" /* Using :name should protect us from SQL-injection */
           : "*"
       }
-      FROM ${PLOT_TABLE}
+      FROM ${queryTable}
       ${
         whereStatements.length
           ? `WHERE ${whereStatements
               .join(" AND ")
-              .replace(/\?/g, m => `$${++i}`)}`
+              .replace(/\?/g, (m) => `$${++i}`)}`
           : ""
       }
     `,
     [fields, ...whereValues],
   );
   console.log(sql);
-  return db
-    .any(sql)
-    .then(JSON.stringify)
-    .then(
-      saveAsyncResults({
-        Bucket: QUERY_BUCKET,
-        ContentType: "application/json",
-        Key: id,
-      }),
-    );
- }
+  const results = await db.any(sql);
+  return saveResults({
+    Body: JSON.stringify(results),
+    Bucket: QUERY_BUCKET,
+    Key: id,
+  });
 };

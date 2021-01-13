@@ -27,6 +27,7 @@ declare namespace payload {
     where?: Record<string, string | number | boolean>;
     bbox?: BBox;
     fields?: string[];
+    table?: string;
   }
 
   // from GeoJSON spec: https://tools.ietf.org/html/rfc7946#section-5

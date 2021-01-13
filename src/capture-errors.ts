@@ -11,14 +11,15 @@ export interface Input {
 }
 export default async ({ id, error: { Error, Cause } }: Input) =>
   saveResults({
-    Bucket: envPick(process.env, "QUERY_BUCKET").QUERY_BUCKET,
-    Key: id,
-    Metadata: {
-      failed: "1",
-    },
-    data: {
+    Body: JSON.stringify({
       error: Error,
       failed: true,
       msg: Cause,
+    }),
+    Bucket: envPick(process.env, "QUERY_BUCKET").QUERY_BUCKET,
+    ContentType: 'application/json',
+    Key: id,
+    Metadata: {
+      failed: "1",
     },
   });
