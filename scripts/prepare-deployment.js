@@ -21,7 +21,7 @@ params.forEach((param) => {
       } else {
         console.log(`Created bucket ${param.Bucket}`);
       }
-    })yar
+    })
   } else {
     console.log(`${param.Bucket} exists`);
   }

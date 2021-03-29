@@ -12,7 +12,28 @@ async function test() {
   const params = {
     stateMachineArn: process.argv[4],
     name: uniqueId,
-    input: JSON.stringify(process.argv[5]),
+    input: JSON.stringify({
+      "id": uniqueId,
+      "src": {
+        "Collection": {
+          "ShortName": "GEDI Cal/Val Field Data_1",
+          "VersionId": "001"
+        }
+      },
+      "query": {
+        "where": {
+          "project": "usa_sonoma"
+        },
+        "bbox": [
+          -122.6,
+          38.4,
+          -122.5,
+          38.5
+        ],
+        "fields": ["project", "latitude", "longitude"],
+        "table":"tree"
+      }
+    }),
   }
   
   const success = await stepfunctions.startExecution(params).promise();
