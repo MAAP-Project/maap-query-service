@@ -1,7 +1,9 @@
 const AWS = require('aws-sdk');
 const s3 = new AWS.S3();
 
-
+/*
+  This scripts creates the two s3 buckets required by the `package` and `deploy` scripts
+*/
 const npm_package_name = process.argv[2];
 const stage = process.argv[3];
 
