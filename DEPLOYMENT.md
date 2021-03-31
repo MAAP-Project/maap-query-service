@@ -27,7 +27,7 @@
 ### Testing the deployment
 1. Copy the `QueryStateMachineArn Value` from the above step. Looks like 
    ```
-   arn:aws:states:us-east-1:532321095167:stateMachine:maap-api-query-service-dev-RunQuery
+   arn:aws:states:us-east-1:XXXXXXXXXXXX:stateMachine:maap-api-query-service-dev-RunQuery
    ```
 2. Run:
    ```
