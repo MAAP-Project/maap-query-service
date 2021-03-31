@@ -206,16 +206,8 @@ Resources:
         Rules:
           - ExpirationInDays: 7
             Status: Enabled
-# Outputs:
-#   RatePlansTable:
-#     Description: RatePlansTable table name
-#     Value: !Ref RatePlansTable
-#   PackerStateMachineArn:
-#     Description: PackerStateMachine ARN
-#     Value: !Ref PackerStateMachine
-#   CheckForNewUsageStateMachineArn:
-#     Description: CheckForNewUsageStateMachine ARN
-#     Value: !Ref CheckForNewUsageStateMachine
-#   FetchPlansStateMachineArn:
-#     Description: FetchPlansStateMachine ARN
-#     Value: !Ref FetchPlansStateMachine
+
+Outputs:
+  QueryStateMachineArn:
+    Description: Query State Machine ARN
+    Value: !GetAtt RunQuery.Arn
