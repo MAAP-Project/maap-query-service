@@ -7,18 +7,27 @@ Parameters:
     Type: String
   GediDatabaseSnapshotIdentifier:
     Type: String
-  # GediDatabaseHost:
-  #   Type: "AWS::SSM::Parameter::Value<String>"
-  #   Default: /dev/gedi-cal-val-db/host
-  # GediDatabaseName:
-  #   Type: "AWS::SSM::Parameter::Value<String>"
-  #   Default: /dev/gedi-cal-val-db/name
+  PermissionsBoundaryArn:
+    Type: String
+    Default: ""
+  GediDatabaseHost:
+    Type: "AWS::SSM::Parameter::Value<String>"
+    Default: /dev/gedi-cal-val-db/host
+  GediDatabaseName:
+    Type: "AWS::SSM::Parameter::Value<String>"
+    Default: /dev/gedi-cal-val-db/name
   GediDatabaseUser:
     Type: "AWS::SSM::Parameter::Value<String>"
     Default: /dev/gedi-cal-val-db/user
   GediDatabasePass:
     Type: "AWS::SSM::Parameter::Value<String>"
     Default: /dev/gedi-cal-val-db/pass
+
+Conditions:
+  NoPermissionBoundary:
+    Fn::Equals:
+      - Ref: PermissionsBoundaryArn
+      - ""
 
 Globals:
   Function:
@@ -37,6 +46,11 @@ Resources:
     Properties:
       Handler: determine-backend.default
       CodeUri: ./dist
+      PermissionsBoundary:
+        Fn::If:
+          - NoPermissionBoundary
+          - Ref: AWS::NoValue
+          - Ref: PermissionsBoundaryArn
 
   CaptureErrors:
     Type: AWS::Serverless::Function
@@ -49,6 +63,11 @@ Resources:
       Policies:
         - S3CrudPolicy:
             BucketName: !Ref QueryResultsBucket
+      PermissionsBoundary:
+        Fn::If:
+          - NoPermissionBoundary
+          - Ref: AWS::NoValue
+          - Ref: PermissionsBoundaryArn
 
   CaptureMetadata:
     Type: AWS::Serverless::Function
@@ -61,13 +80,11 @@ Resources:
       Policies:
         - S3CrudPolicy:
             BucketName: !Ref QueryResultsBucket
-
-  GediCalValPostgresDatabase:
-    Type : AWS::RDS::DBInstance
-    Properties:
-      DBInstanceClass: db.t2.micro
-      DBSnapshotIdentifier: !Ref GediDatabaseSnapshotIdentifier
-      DBName: ${AWS::StackName}-gedi-calval
+      PermissionsBoundary:
+        Fn::If:
+          - NoPermissionBoundary
+          - Ref: AWS::NoValue
+          - Ref: PermissionsBoundaryArn
 
   # Query Functions
   # ---------------
@@ -78,8 +95,8 @@ Resources:
       CodeUri: ./dist
       Environment:
         Variables:
-          DB_HOST: !GetAtt GediCalValPostgresDatabase.Endpoint.Address
-          DB_NAME: !Ref GediCalValPostgresDatabase
+          DB_HOST: !Ref GediDatabaseHost
+          DB_NAME: !Ref GediDatabaseName
           DB_USER: !Ref GediDatabaseUser
           DB_PASS: !Ref GediDatabasePass
           QUERY_BUCKET: !Ref QueryResultsBucket
@@ -90,6 +107,11 @@ Resources:
       Policies:
         - S3CrudPolicy:
             BucketName: !Ref QueryResultsBucket
+      PermissionsBoundary:
+        Fn::If:
+          - NoPermissionBoundary
+          - Ref: AWS::NoValue
+          - Ref: PermissionsBoundaryArn
 
   # State Machine
   # --------------
@@ -204,6 +226,11 @@ Resources:
                 Action:
                   - lambda:InvokeFunction
                 Resource: "*"
+      PermissionsBoundary:
+        Fn::If:
+          - NoPermissionBoundary
+          - Ref: AWS::NoValue
+          - Ref: PermissionsBoundaryArn
 
   # Buckets
   # --------

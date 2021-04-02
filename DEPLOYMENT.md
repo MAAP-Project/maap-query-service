@@ -2,6 +2,10 @@
 
 Deploys the database and API query service for GEDI Cal/Val data.
 
+## Prerequisities
+
+- Create an RDS database for the GEDI Cal/Val data in the AWS account
+
 ## Steps
 
 1. Clone the repo
@@ -18,16 +22,20 @@ Deploys the database and API query service for GEDI Cal/Val data.
     npm install
     ```
 
-4. Create SSM parameters for the database credentials: `username` and `password`. Consult the [README for guidance on how to create SSM parameters](https://github.com/MAAP-Project/maap-api-query-service#ssm). By default, the following names are assumed for the parameters in the deployment code, but any names can be used for the parameters:
+4. Create SSM parameters for the information used to access the GEDI database: `host`, `name`, `username`, and `password`. Consult the [README for guidance on how to create SSM parameters](https://github.com/MAAP-Project/maap-api-query-service#ssm). By default, the following names are assumed for the parameters in the deployment code, but any names can be used for the parameters:
 
+    - host: `/dev/gedi-cal-val-db/host`
+    - name: `/dev/gedi-cal-val-db/name`
     - username: `/dev/gedi-cal-val-db/user`
     - password: `/dev/gedi-cal-val-db/pass`
 
 5. Set the environment variables:
 
-    - `GEDI_DB_SNAPSHOT_ARN`: ARN of RDS database snapshot to use when creating the GEDI database
-    - `STAGE` (default: `dev`)
+    - `PERMISSIONS_BOUNDARY_ARN` (optional): ARN of IAM permissions boundary policy to use when creating IAM roles
+    - `STAGE`: name of deployment stage (e.g. `dev`, `uat`, `ops`) (default: `dev`)
     - `NODE_ENV` (default: `production`)
+    - `SSM_GEDI_DB_HOST`: name of SSM parameter for GEDI database host (default: `/dev/gedi-cal-val-db/host`)
+    - `SSM_GEDI_DB_NAME`: name of SSM parameter for GEDI database name (default: `/dev/gedi-cal-val-db/name`)
     - `SSM_GEDI_DB_USER`: name of SSM parameter for GEDI database username created in step 4 (default: `/dev/gedi-cal-val-db/user`)
     - `SSM_GEDI_DB_PASS`: name of SSM parameter for GEDI database password created in step 4 (default: `/dev/gedi-cal-val-db/pass`)
 
