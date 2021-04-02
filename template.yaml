@@ -5,8 +5,6 @@ Transform: AWS::Serverless-2016-10-31
 Parameters:
   Stage:
     Type: String
-  GediDatabaseSnapshotIdentifier:
-    Type: String
   PermissionsBoundaryArn:
     Type: String
     Default: ""
