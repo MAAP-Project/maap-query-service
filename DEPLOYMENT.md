@@ -47,11 +47,15 @@ Deploys the database and API query service for GEDI Cal/Val data.
 
 ## Testing the deployment
 
-1. Copy the `QueryStateMachineArn Value` from the above step. Looks like
+1. Copy the `QueryStateMachineArn` output from the above step. Looks like
 
-   ```text
-   arn:aws:states:us-east-1:XXXXXXXXXXXX:stateMachine:maap-api-query-service-dev-RunQuery
-   ```
+    ```text
+    Outputs
+    -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    Key                 QueryStateMachineArn
+    Description         Query State Machine ARN
+    Value               arn:aws:states:us-west-2:XXXXXXXXXXXX:stateMachine:maap-api-query-service-uat-RunQuery
+    ```
 
 2. Run:
 
