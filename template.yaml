@@ -8,6 +8,12 @@ Parameters:
   PermissionsBoundaryArn:
     Type: String
     Default: ""
+  VpcSubnetIds:
+    Type: CommaDelimitedList
+    Default: ""
+  VpcSecurityGroupIds:
+    Type: CommaDelimitedList
+    Default: ""
   GediDatabaseHost:
     Type: "AWS::SSM::Parameter::Value<String>"
     Default: /dev/gedi-cal-val-db/host
@@ -35,6 +41,14 @@ Globals:
     Environment:
       Variables:
         NODE_ENV: 'production'
+    VpcConfig:
+      SubnetIds: !Ref VpcSubnetIds
+      SecurityGroupIds: !Ref VpcSecurityGroupIds
+    PermissionsBoundary:
+      Fn::If:
+        - NoPermissionBoundary
+        - Ref: AWS::NoValue
+        - Ref: PermissionsBoundaryArn
 
 Resources:
   # Meta Functions
@@ -44,11 +58,6 @@ Resources:
     Properties:
       Handler: determine-backend.default
       CodeUri: ./dist
-      PermissionsBoundary:
-        Fn::If:
-          - NoPermissionBoundary
-          - Ref: AWS::NoValue
-          - Ref: PermissionsBoundaryArn
 
   CaptureErrors:
     Type: AWS::Serverless::Function
@@ -61,11 +70,6 @@ Resources:
       Policies:
         - S3CrudPolicy:
             BucketName: !Ref QueryResultsBucket
-      PermissionsBoundary:
-        Fn::If:
-          - NoPermissionBoundary
-          - Ref: AWS::NoValue
-          - Ref: PermissionsBoundaryArn
 
   CaptureMetadata:
     Type: AWS::Serverless::Function
@@ -78,11 +82,6 @@ Resources:
       Policies:
         - S3CrudPolicy:
             BucketName: !Ref QueryResultsBucket
-      PermissionsBoundary:
-        Fn::If:
-          - NoPermissionBoundary
-          - Ref: AWS::NoValue
-          - Ref: PermissionsBoundaryArn
 
   # Query Functions
   # ---------------
@@ -105,11 +104,6 @@ Resources:
       Policies:
         - S3CrudPolicy:
             BucketName: !Ref QueryResultsBucket
-      PermissionsBoundary:
-        Fn::If:
-          - NoPermissionBoundary
-          - Ref: AWS::NoValue
-          - Ref: PermissionsBoundaryArn
 
   # State Machine
   # --------------

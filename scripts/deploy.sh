@@ -13,6 +13,8 @@ sam deploy --template-file template.packaged.yaml \
   --parameter-overrides Stage="${STAGE:-dev}" \
   GediDatabaseSnapshotIdentifier="$GEDI_DB_SNAPSHOT_ARN" \
   PermissionsBoundaryArn="$PERMISSIONS_BOUNDARY_ARN" \
+  VpcSubnetIds="$VPC_SUBNET_IDS" \
+  VpcSecurityGroupIds="$VPC_SECURITY_GROUP_IDS" \
   GediDatabaseHost="${SSM_GEDI_DB_HOST:-/dev/gedi-cal-val-db/host}" \
   GediDatabaseName="${SSM_GEDI_DB_NAME:-/dev/gedi-cal-val-db/name}" \
   GediDatabaseUser="${SSM_GEDI_DB_USER:-/dev/gedi-cal-val-db/user}" \
