@@ -5,12 +5,14 @@ Transform: AWS::Serverless-2016-10-31
 Parameters:
   Stage:
     Type: String
-  GediDatabaseHost:
-    Type: "AWS::SSM::Parameter::Value<String>"
-    Default: /dev/gedi-cal-val-db/host
-  GediDatabaseName:
-    Type: "AWS::SSM::Parameter::Value<String>"
-    Default: /dev/gedi-cal-val-db/name
+  GediDatabaseSnapshotIdentifier:
+    Type: String
+  # GediDatabaseHost:
+  #   Type: "AWS::SSM::Parameter::Value<String>"
+  #   Default: /dev/gedi-cal-val-db/host
+  # GediDatabaseName:
+  #   Type: "AWS::SSM::Parameter::Value<String>"
+  #   Default: /dev/gedi-cal-val-db/name
   GediDatabaseUser:
     Type: "AWS::SSM::Parameter::Value<String>"
     Default: /dev/gedi-cal-val-db/user
@@ -60,6 +62,13 @@ Resources:
         - S3CrudPolicy:
             BucketName: !Ref QueryResultsBucket
 
+  GediCalValPostgresDatabase:
+    Type : AWS::RDS::DBInstance
+    Properties:
+      DBInstanceClass: db.t2.micro
+      DBSnapshotIdentifier: !Ref GediDatabaseSnapshotIdentifier
+      DBName: ${AWS::StackName}-gedi-calval
+
   # Query Functions
   # ---------------
   QueryGediCalValPostgres:
@@ -69,8 +78,8 @@ Resources:
       CodeUri: ./dist
       Environment:
         Variables:
-          DB_HOST: !Ref GediDatabaseHost
-          DB_NAME: !Ref GediDatabaseName
+          DB_HOST: !GetAtt GediCalValPostgresDatabase.Endpoint.Address
+          DB_NAME: !Ref GediCalValPostgresDatabase
           DB_USER: !Ref GediDatabaseUser
           DB_PASS: !Ref GediDatabasePass
           QUERY_BUCKET: !Ref QueryResultsBucket
