@@ -8,11 +8,10 @@ Parameters:
   PermissionsBoundaryArn:
     Type: String
     Default: ""
+  VpcId:
+    Type: AWS::EC2::VPC::Id
   VpcSubnetIds:
-    Type: CommaDelimitedList
-    Default: ""
-  VpcSecurityGroupIds:
-    Type: CommaDelimitedList
+    Type: List<AWS::EC2::Subnet::Id>
     Default: ""
   GediDatabaseHost:
     Type: "AWS::SSM::Parameter::Value<String>"
@@ -32,6 +31,11 @@ Conditions:
     Fn::Equals:
       - Ref: PermissionsBoundaryArn
       - ""
+  HasVpcConfig:
+    Fn::Not:
+      Fn::Equals:
+        - Ref: VpcId
+        - ""
 
 Globals:
   Function:
@@ -42,8 +46,12 @@ Globals:
       Variables:
         NODE_ENV: 'production'
     VpcConfig:
-      SubnetIds: !Ref VpcSubnetIds
-      SecurityGroupIds: !Ref VpcSecurityGroupIds
+      Fn::If:
+        - HasVpcConfig
+        - SubnetIds: !Ref VpcSubnetIds
+          SecurityGroupIds:
+            - !Ref LambdaSecurityGroup
+        - Ref: AWS::NoValue
     PermissionsBoundary:
       Fn::If:
         - NoPermissionBoundary
@@ -51,6 +59,16 @@ Globals:
         - Ref: PermissionsBoundaryArn
 
 Resources:
+  LambdaSecurityGroup:
+    Condition: HasVpcConfig
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "Allow all outbound traffic from Lambda"
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+      VpcId: !Ref VpcId
+
   # Meta Functions
   # ---------------
   DetermineBackend:

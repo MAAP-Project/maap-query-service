@@ -38,7 +38,7 @@ Deploys the database and API query service for GEDI Cal/Val data.
     - `SSM_GEDI_DB_NAME`: name of SSM parameter for GEDI database name (default: `/dev/gedi-cal-val-db/name`)
     - `SSM_GEDI_DB_USER`: name of SSM parameter for GEDI database username created in step 4 (default: `/dev/gedi-cal-val-db/user`)
     - `SSM_GEDI_DB_PASS`: name of SSM parameter for GEDI database password created in step 4 (default: `/dev/gedi-cal-val-db/pass`)
-    - `VPC_SECURITY_GROUP_IDS`: comma-delimited list of VPC security group IDs, if necesary (e.g. `sg-123,sg-456`)
+    - `VPC_ID`: VPC ID, if necesary (e.g. `vpc-123`)
     - `VPC_SUBNET_IDS`: comma-delimited list of VPC subnet IDs, if necesary (e.g. `subnet-123,subnet-456`)
 
 6. Run full deployment (builds, packages and deploys):
