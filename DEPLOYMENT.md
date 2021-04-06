@@ -29,19 +29,34 @@ Deploys the database and API query service for GEDI Cal/Val data.
     - username: `/dev/gedi-cal-val-db/user`
     - password: `/dev/gedi-cal-val-db/pass`
 
-5. Set the environment variables:
+5. If your RDS database for GEDI Cal/Val data is deployed in a VPC, you need to create a security group to allow access from your API query service Lambdas to the database. If your RDS database is not in a VPC, you can skip this step.
 
-    - `PERMISSIONS_BOUNDARY_ARN` (optional): ARN of IAM permissions boundary policy to use when creating IAM roles
+    First, create the new security group and add a rule to allow all outbound traffic:
+
+    | Type | Protocol | Port Range | Destination |
+    |-|-|-|-|
+    | All traffic | All | All | 0.0.0.0/0 |
+
+    Then, edit the security group to add an inbound rule allowing traffic on port 5432 from the security group itself (where `sg-1234` is the name of the security group that you created):
+
+    | Type | Protocol | Port Range | Source |
+    |-|-|-|-|
+    | PostgreSQL | TCP | 5432 | sg-1234 |
+
+6. Set the environment variables:
+
     - `STAGE`: name of deployment stage (e.g. `dev`, `uat`, `ops`) (default: `dev`)
     - `NODE_ENV` (default: `production`)
     - `SSM_GEDI_DB_HOST`: name of SSM parameter for GEDI database host (default: `/dev/gedi-cal-val-db/host`)
     - `SSM_GEDI_DB_NAME`: name of SSM parameter for GEDI database name (default: `/dev/gedi-cal-val-db/name`)
     - `SSM_GEDI_DB_USER`: name of SSM parameter for GEDI database username created in step 4 (default: `/dev/gedi-cal-val-db/user`)
     - `SSM_GEDI_DB_PASS`: name of SSM parameter for GEDI database password created in step 4 (default: `/dev/gedi-cal-val-db/pass`)
-    - `VPC_ID`: VPC ID, if necesary (e.g. `vpc-123`)
-    - `VPC_SUBNET_IDS`: comma-delimited list of VPC subnet IDs, if necesary (e.g. `subnet-123,subnet-456`)
+    - `PERMISSIONS_BOUNDARY_ARN` (optional): ARN of IAM permissions boundary policy to use when creating IAM roles
+    - `VPC_ID` (optional): VPC ID, if necesary (e.g. `vpc-123`)
+    - `VPC_SUBNET_IDS` (optional): comma-delimited list of VPC subnet IDs, if necesary (e.g. `subnet-123,subnet-456`)
+    - `SECURITY_GROUP_ID` (optional): ID of security group created in step 5, if any (e.g. `sg-123`)
 
-6. Run full deployment (builds, packages and deploys):
+7. Run full deployment (builds, packages and deploys):
 
     ```bash
     npm run full-deploy

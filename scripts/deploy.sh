@@ -15,6 +15,7 @@ sam deploy --template-file template.packaged.yaml \
   PermissionsBoundaryArn="$PERMISSIONS_BOUNDARY_ARN" \
   VpcId="$VPC_ID" \
   VpcSubnetIds="$VPC_SUBNET_IDS" \
+  SecurityGroupId="$SECURITY_GROUP_ID" \
   GediDatabaseHost="${SSM_GEDI_DB_HOST:-/dev/gedi-cal-val-db/host}" \
   GediDatabaseName="${SSM_GEDI_DB_NAME:-/dev/gedi-cal-val-db/name}" \
   GediDatabaseUser="${SSM_GEDI_DB_USER:-/dev/gedi-cal-val-db/user}" \
