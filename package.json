@@ -9,7 +9,7 @@
     "validate": "node scripts/validate-template.js",
     "prepackage": "node scripts/prepare-deployment.js $npm_package_name ${STAGE:-dev}",
     "package": "npm run --silent validate && sam package --template-file template.yaml --s3-bucket $npm_package_name-${STAGE:-dev} --output-template-file template.packaged.yaml",
-    "deploy": "sam deploy --template-file template.packaged.yaml --stack-name $npm_package_name-${STAGE:-dev} --capabilities CAPABILITY_IAM --parameter-overrides Stage=${STAGE:-dev} GediDatabaseHost=\"${SSM_GEDI_DB_HOST:-/dev/gedi-cal-val-db/host}\" GediDatabaseName=\"${SSM_GEDI_DB_NAME:-/dev/gedi-cal-val-db/name}\" GediDatabaseUser=\"${SSM_GEDI_DB_USER:-/dev/gedi-cal-val-db/user}\" GediDatabasePass=\"${SSM_GEDI_DB_PASS:-/dev/gedi-cal-val-db/pass}\"  --no-fail-on-empty-changeset --s3-bucket $npm_package_name-${STAGE:-dev}-deploy",
+    "deploy": "./scripts/deploy.sh $npm_package_name",
     "full-deploy": "npm run build && npm run package && npm run deploy",
     "test-deployment": "node scripts/test-deployment $npm_package_name ${STAGE:-dev}",
     "describe-stack": "aws cloudformation describe-stacks --stack-name $npm_package_name-${STAGE:-dev}",

@@ -5,6 +5,18 @@ Transform: AWS::Serverless-2016-10-31
 Parameters:
   Stage:
     Type: String
+  PermissionsBoundaryArn:
+    Type: String
+    Default: ""
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Default: ""
+  VpcSubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Default: ""
+  SecurityGroupId:
+    Type: AWS::EC2::SecurityGroup::Id
+    Default: ""
   GediDatabaseHost:
     Type: "AWS::SSM::Parameter::Value<String>"
     Default: /dev/gedi-cal-val-db/host
@@ -18,6 +30,17 @@ Parameters:
     Type: "AWS::SSM::Parameter::Value<String>"
     Default: /dev/gedi-cal-val-db/pass
 
+Conditions:
+  NoPermissionBoundary:
+    Fn::Equals:
+      - Ref: PermissionsBoundaryArn
+      - ""
+  HasVpcConfig:
+    Fn::Not:
+      - Fn::Equals:
+        - Ref: VpcId
+        - ""
+
 Globals:
   Function:
     Runtime: nodejs10.x
@@ -26,6 +49,18 @@ Globals:
     Environment:
       Variables:
         NODE_ENV: 'production'
+    VpcConfig:
+      Fn::If:
+        - HasVpcConfig
+        - SubnetIds: !Ref VpcSubnetIds
+          SecurityGroupIds:
+            - !Ref SecurityGroupId
+        - Ref: AWS::NoValue
+    PermissionsBoundary:
+      Fn::If:
+        - NoPermissionBoundary
+        - Ref: AWS::NoValue
+        - Ref: PermissionsBoundaryArn
 
 Resources:
   # Meta Functions
@@ -195,6 +230,11 @@ Resources:
                 Action:
                   - lambda:InvokeFunction
                 Resource: "*"
+      PermissionsBoundary:
+        Fn::If:
+          - NoPermissionBoundary
+          - Ref: AWS::NoValue
+          - Ref: PermissionsBoundaryArn
 
   # Buckets
   # --------
